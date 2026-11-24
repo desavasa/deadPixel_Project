@@ -5,9 +5,9 @@
 #include "gamelib.h"
 
 // Prototipos
-void menu_principal(float *pX, float *pY, int *band, int *opc_menu, Color green, Texture2D flecha, Texture2D background);
+void menu_principal(Vector2 *pos, sTband *band, Color green, Texture2D flecha, Texture2D background);
 void menu_interno();
-void nivel1(int *band, float *pX, float *pY, Color green, Texture2D player, Texture2D background, Texture2D zombie);
+void nivel1(sTband *band, Vector2 *pos, Color green, Texture2D player, Texture2D background, Texture2D zombie);
 void nivel2();
 void nivel3();
 void nivel4();
@@ -18,58 +18,63 @@ int main()
     // Pantalla completa
     SetConfigFlags(FLAG_FULLSCREEN_MODE);
 
-    int band = 0, opc_menu = 1;
+    sTband band;
+    sTplayer jugador;
+    sTenemy zombie;
+    band.main = 0;
+    band.menu = 1;
+    band.nivel = 0;
 
     // En el menu
     // -> iniciar con 1450x y 730y, -> salir 1600x y 845y, -> creditos 1520x y 948y
-    float pX = 1450.0f;
-    float pY = 730.0f;
+    jugador.pos.x = 1450.0f;
+    jugador.pos.y = 730.0f;
     Color green = {20, 160, 133, 255};
 
-    InitWindow(800, 800, "Dead Pixel");
+    InitWindow(1920, 1080, "Dead Pixel");
     SetTargetFPS(60);
 
     // Imagenes cargadas como Texturas 2D
-    Texture2D player = LoadTexture("sprites/Spritee.png");
+    jugador.player = LoadTexture("sprites/Spritee.png");
     Texture2D background2 = LoadTexture("sprites/Fondou.png");
     Texture2D flecha = LoadTexture("sprites/flecha.png");
     Texture2D back_menu = LoadTexture("sprites/menu.png");
-    Texture2D block = LoadTexture("sprites/Zom1cpy.png");
+    zombie.zom = LoadTexture("sprites/Zom1cpy.png");
 
     // Loop principal
-    while (WindowShouldClose() == false && band != 6)
+    while (WindowShouldClose() == false && band.main != 6)
     {
-        if (band == 0)
+        if (band.nivel == 0)
         {
-            menu_principal(&pX, &pY, &band, &opc_menu, green, flecha, back_menu);
+            menu_principal(&jugador.pos, &band, green, flecha, back_menu);
         }
         else
         {
-            if (band == 1)
+            if (band.nivel == 1)
             {
-                nivel1(&band, &pX, &pY, green, player, background2, block);
+                nivel1(&band, &jugador.pos, green, jugador.player, background2, zombie.zom);
             }
             else
             {
-                if(band == 2)
+                if(band.nivel == 2)
                 {
                     nivel2();
                 }
                 else
                 {
-                    if(band == 3)
+                    if(band.nivel == 3)
                     {
                         nivel3();
                     }
                     else
                     {
-                        if(band == 4)
+                        if(band.nivel == 4)
                         {
                             nivel4();
                         }
                         else
                         {
-                            if(band == 5)
+                            if(band.nivel == 5)
                             {
                                 nivel5();
                             }
@@ -83,32 +88,32 @@ int main()
     }
 
     // Descarga de texturas
-    UnloadTexture(player);
+    UnloadTexture(jugador.player);
     UnloadTexture(flecha);
     UnloadTexture(back_menu);
     UnloadTexture(background2);
-    UnloadTexture(block);
+    UnloadTexture(zombie.zom);
 
     CloseWindow();
     return 0;
 }
 //*********************************************************************
-void menu_principal(float *pX, float *pY, int *band, int *opc_menu, Color green, Texture2D flecha, Texture2D background)
+void menu_principal(Vector2 *pos, sTband *band, Color green, Texture2D flecha, Texture2D background)
 {
 
     // Movimiento de seleccionador
     if (IsKeyPressed(KEY_UP))
     {
-        (*opc_menu)--;
-        if (*opc_menu < 1)
+        (band->menu)--;
+        if (band->menu < 1)
         {
-            (*opc_menu) = 3;
+            (band->menu) = 3;
         }
         else
         {
-            if (*opc_menu > 3)
+            if (band->menu > 3)
             {
-                (*opc_menu) = 1;
+                (band->menu) = 1;
             }
         }
     }
@@ -116,57 +121,57 @@ void menu_principal(float *pX, float *pY, int *band, int *opc_menu, Color green,
     {
         if (IsKeyPressed(KEY_DOWN))
         {
-            (*opc_menu)++;
-            if (*opc_menu > 3)
+            (band->menu)++;
+            if (band->menu > 3)
             {
-                (*opc_menu) = 1;
+                (band->menu) = 1;
             }
             else
             {
-                if (*opc_menu < 1)
+                if (band->menu < 1)
                 {
-                    (*opc_menu) = 3;
+                    (band->menu) = 3;
                 }
             }
         }
     }
 
-    if (*opc_menu == 1)
+    if (band->menu == 1)
     {
-        *pY = 730.0f;
-        *pX = 1450.0f;
+        pos->y = 730.0f;
+        pos->x = 1450.0f;
     }
     else
     {
-        if (*opc_menu == 2)
+        if (band->menu == 2)
         {
-            *pY = 845.0f;
-            *pX = 1600.0f;
+            pos->y = 845.0f;
+            pos->x = 1600.0f;
         }
         else
         {
-            *pY = 948.0f;
-            *pX = 1520.0f;
+            pos->y = 948.0f;
+            pos->x = 1520.0f;
         }
     }
 
     if (IsKeyPressed(KEY_ENTER))
     {
-        if (*opc_menu == 1)
+        if (band->menu == 1)
         {
-            *band = 1;
-            *pX = 975.0f;
-            *pY = 550.0f;
+            band->nivel = 1;
+            pos->x = 975.0f;
+            pos->y = 550.0f;
         }
         else
         {
-            if (*opc_menu == 2)
+            if (band->menu == 2)
             {
-                *band = 2;
+                band->main = 6;
             }
             else
             {
-                *band = 3;
+                band->main = 3;
             }
         }
     }
@@ -179,7 +184,7 @@ void menu_principal(float *pX, float *pY, int *band, int *opc_menu, Color green,
 
     float nuevoAncho = 50.0f;
     float nuevoAlto = 80.0f;
-    Rectangle destRec = {*pX, *pY, nuevoAncho, nuevoAlto};
+    Rectangle destRec = {pos->x, pos->y, nuevoAncho, nuevoAlto};
 
     // 1. Origen: Tomamos la imagen de fondo completa
     Rectangle sourceBackground = {0.0f, 0.0f, (float)background.width, (float)background.height};
@@ -202,34 +207,10 @@ void menu_interno()
 {
 }
 //*********************************************************************
-void nivel1(int *band, float *pX, float *pY, Color green, Texture2D player, Texture2D background, Texture2D zombie)
+void nivel1(sTband *band, Vector2 *pos, Color green, Texture2D player, Texture2D background, Texture2D zombie)
 {
     // Movimientos de jugador
-    if (IsKeyDown(KEY_RIGHT))
-    {
-        *pX += 3.0f;
-    }
-    else
-    {
-        if (IsKeyDown(KEY_LEFT))
-        {
-            *pX -= 3.0f;
-        }
-        else
-        {
-            if (IsKeyDown(KEY_UP))
-            {
-                *pY -= 3.0f;
-            }
-            else
-            {
-                if (IsKeyDown(KEY_DOWN))
-                {
-                    *pY += 3.0f;
-                }
-            }
-        }
-    }
+    mov_jugador(pos);
 
     // Dibujado
     BeginDrawing();
@@ -241,7 +222,7 @@ void nivel1(int *band, float *pX, float *pY, Color green, Texture2D player, Text
 
     float nuevoAncho = 50.0f;
     float nuevoAlto = 80.0f;
-    Rectangle destRec = {*pX, *pY, nuevoAncho, nuevoAlto};
+    Rectangle destRec = {pos->x, pos->y, nuevoAncho, nuevoAlto};
     Rectangle destinoRec = {1000.0f, 950.0f, 50.0f, 80.0f};
 
     Rectangle sourceBackground = {0.0f, 0.0f, (float)background.width, (float)background.height};
@@ -252,7 +233,7 @@ void nivel1(int *band, float *pX, float *pY, Color green, Texture2D player, Text
 
     if (CheckCollisionRecs(destRec, destinoRec))
     {
-        *band = 0;
+        band->nivel = 0;
     }
 
     DrawTexturePro(background, sourceBackground, destBackground, origen, 0.0f, WHITE);
