@@ -52,6 +52,7 @@ int main()
         {
             if (band.nivel == 1)
             {
+                // Falta battalla
                 nivel1(&band, &jugador.pos, green, jugador.player, background2, zombie.zom);
             }
             else
