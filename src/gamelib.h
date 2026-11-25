@@ -48,6 +48,7 @@ typedef struct _enemy
     int vida;
     int ataque;
     int tipo;
+    float timer;
     Vector2 pos;
     Vector2 dir;
     Texture2D zom;
@@ -57,9 +58,9 @@ typedef struct _mapa
 {
     Texture2D fondo;
     Rectangle paredes[4];
-    int mParedes = 4;
+    int mParedes;
     Rectangle salidas[4];
-    int mSalidas = 4;
+    int mSalidas;
     int destSalida[4];
 } sTmapa;
 
@@ -69,6 +70,8 @@ void mov_player(float *pX, float *pY);
 void mov_jugador(Vector2 *pos);
 void mov_flechita(Vector2 *pos, sTband *band);
 void mov_jugador_colision(Vector2 *pos, Rectangle paredes[], int totalParedes);
+void init_zombies(sTenemy zombie[], int total, sTmapa map);
+void mov_zombie_colision(sTenemy *zombie, float velocidad, Rectangle paredes[], int totalParedes);
 
 void batalla();
 
@@ -189,19 +192,24 @@ void mov_jugador_colision(Vector2 *pos, Rectangle paredes[], int totalParedes)
 //*********************************************************
 void mov_zombie_colision(sTenemy *zombie, float velocidad, Rectangle paredes[], int totalParedes)
 {
-    static float temporizador = 0.0f;
-    temporizador += GetFrameTime();
+    zombie->timer += GetFrameTime();
 
     float ancho = 50.0f;
     float alto = 80.0f;
     float w = (float)GetScreenWidth();
     float h = (float)GetScreenHeight();
 
-    if (temporizador >= 1.5f)
+    if (zombie->timer >= 1.5f)
     {
         zombie->dir.x = (float)GetRandomValue(-1, 1);
         zombie->dir.y = (float)GetRandomValue(-1, 1);
-        temporizador = 0.0f;
+        
+        // Evita que se quede completamente detenido
+        if (zombie->dir.x == 0.0f && zombie->dir.y == 0.0f)
+        {
+            zombie->dir.x = 1.0f;
+        }
+        zombie->timer = 0.0f;
     }
 
     // Mover en X y rebotar si toca pared o borde
@@ -332,4 +340,63 @@ void mov_zombie(sTenemy *zombie, float velocidad)
         zombie->pos.x = GetScreenWidth() - 50.0f;
     if (zombie->pos.y > GetScreenHeight() - 80.0f)
         zombie->pos.y = GetScreenHeight() - 80.0f;
+}
+//*********************************************************
+void init_zombies(sTenemy zombie[], int total, sTmapa map)
+{
+    float w = (float)GetScreenWidth();
+    float h = (float)GetScreenHeight();
+    float ancho = 50.0f;
+    float alto = 80.0f;
+
+    // Zona segura en el centro (donde aparece el jugador en mov_flechita)
+    Rectangle zonaJugador = {(w / 2.0f) - 140.0f, (h / 2.0f) - 140.0f, 330.0f, 360.0f};
+
+    for (int i = 0; i < total; i++)
+    {
+        zombie[i].timer = (float)GetRandomValue(0, 15) / 10.0f; // Desfase inicial para que no giren todos al mismo tiempo
+        zombie[i].dir.x = (float)GetRandomValue(-1, 1);
+        zombie[i].dir.y = (float)GetRandomValue(-1, 1);
+
+        bool valida = false;
+        while (!valida)
+        {
+            // Repartir entre calle vertical (pares) y calle horizontal (impares)
+            if (i % 2 == 0)
+            {
+                zombie[i].pos.x = (float)GetRandomValue((int)(w * 0.37f), (int)(w * 0.58f));
+                zombie[i].pos.y = (float)GetRandomValue((int)(h * 0.06f), (int)(h * 0.88f));
+            }
+            else
+            {
+                zombie[i].pos.x = (float)GetRandomValue((int)(w * 0.04f), (int)(w * 0.90f));
+                zombie[i].pos.y = (float)GetRandomValue((int)(h * 0.39f), (int)(h * 0.48f));
+            }
+
+            Rectangle rectZom = {zombie[i].pos.x, zombie[i].pos.y, ancho, alto};
+            valida = true;
+
+            // 1. Verificar que esté lejos del personaje principal
+            if (CheckCollisionRecs(rectZom, zonaJugador))
+            {
+                valida = false;
+            }
+
+            // 2. Verificar que no toque ninguna pared
+            if (valida && chocaConParedes(rectZom, map.paredes, map.mParedes))
+            {
+                valida = false;
+            }
+
+            // 3. Verificar que no aparezca encima de otro zombi ya colocado
+            for (int j = 0; j < i && valida; j++)
+            {
+                Rectangle otroZom = {zombie[j].pos.x, zombie[j].pos.y, ancho, alto};
+                if (CheckCollisionRecs(rectZom, otroZom))
+                {
+                    valida = false;
+                }
+            }
+        }
+    }
 }

@@ -8,7 +8,7 @@
 void menu_principal(Vector2 *pos, sTband *band, Color green, Texture2D flecha, Texture2D background);
 void menu_interno();
 void refugio(sTband *band, Vector2 *pos, Color green, Texture2D player, Texture2D fondoRefugio);
-void nivel1(sTband *band, Vector2 *pos, Color green, Texture2D player, sTmapa map, sTenemy *zombie);
+void nivel1(sTband *band, Vector2 *pos, Color green, Texture2D player, sTmapa map, sTenemy zombie[]);
 void nivel2();
 void nivel3();
 void nivel4();
@@ -21,7 +21,7 @@ int main()
 
     sTband band;
     sTplayer jugador;
-    sTenemy zombie;
+    sTenemy zombie[12];
     sTmapa map;
     band.main = 0;
     band.menu = 1;
@@ -38,6 +38,7 @@ int main()
 
     float w = (float)GetScreenWidth();
     float h = (float)GetScreenHeight();
+    int i;
 
     // Inicialización de mapa
     map.mParedes = 4;
@@ -58,11 +59,33 @@ int main()
     map.fondo = LoadTexture("sprites/Fondou.png");
     Texture2D fondoRefugio = LoadTexture("sprites/Img.png");
     Texture2D flecha = LoadTexture("sprites/flecha.png");
-    Texture2D back_menu = LoadTexture("sprites/menu.png");
-    zombie.zom = LoadTexture("sprites/Zom1cpy.png");
+    Texture2D back_menu = LoadTexture("sprites/back_menu.png");
 
-    zombie.pos.x = GetScreenWidth() / 2.0f;
-    zombie.pos.y = (GetScreenHeight() / 2.0f) - 250.0f;
+    for (i = 0; i < 3; i++)
+    {
+        zombie[i].zom = LoadTexture("sprites/zom1.png");
+        zombie[i].pos.x = GetScreenWidth() / 2.0f;
+        zombie[i].pos.y = (GetScreenHeight() / 2.0f) - 250.0f;
+    }
+    for (i = 3; i < 6; i++)
+    {
+        zombie[i].zom = LoadTexture("sprites/zom2.png");
+        zombie[i].pos.x = GetScreenWidth() / 2.0f;
+        zombie[i].pos.y = (GetScreenHeight() / 2.0f) - 250.0f;
+    }
+    for (i = 6; i < 9; i++)
+    {
+        zombie[i].zom = LoadTexture("sprites/zom3.png");
+        zombie[i].pos.x = GetScreenWidth() / 2.0f;
+        zombie[i].pos.y = (GetScreenHeight() / 2.0f) - 250.0f;
+    }
+    for (i = 9; i < 12; i++)
+    {
+        zombie[i].zom = LoadTexture("sprites/zom4.png");
+        zombie[i].pos.x = GetScreenWidth() / 2.0f;
+        zombie[i].pos.y = (GetScreenHeight() / 2.0f) - 250.0f;
+    }
+    init_zombies(zombie, 12, map);
 
     // Loop principal
     while (WindowShouldClose() == false && band.main != 6)
@@ -80,7 +103,7 @@ int main()
                 {
                 case 1:
                     // Falta battalla
-                    nivel1(&band, &jugador.pos, green, jugador.player, map, &zombie);
+                    nivel1(&band, &jugador.pos, green, jugador.player, map, zombie);
                     break;
                 case 2:
                     nivel2();
@@ -111,7 +134,10 @@ int main()
     UnloadTexture(flecha);
     UnloadTexture(back_menu);
     UnloadTexture(map.fondo);
-    UnloadTexture(zombie.zom);
+    for (i = 0; i < 12; i++)
+    {
+        UnloadTexture(zombie[i].zom);
+    }
     UnloadTexture(fondoRefugio);
 
     CloseWindow();
@@ -195,53 +221,60 @@ void refugio(sTband *band, Vector2 *pos, Color green, Texture2D player, Texture2
     DrawRectangleLinesEx(salidaRefugio, 3.0f, GREEN);
 }
 //*********************************************************************
-void nivel1(sTband *band, Vector2 *pos, Color green, Texture2D player, sTmapa map, sTenemy *zombie)
+void nivel1(sTband *band, Vector2 *pos, Color green, Texture2D player, sTmapa map, sTenemy zombie[])
 {
     float w = (float)GetScreenWidth();
     float h = (float)GetScreenHeight();
 
-    // Movimientos de jugador
-
+    // Movimientos de jugador y zombis
     mov_jugador_colision(pos, map.paredes, map.mParedes);
-    mov_zombie_colision(zombie, 1.0f, map.paredes, map.mParedes);
+    for (int i = 0; i < 12; i++)
+    {
+        mov_zombie_colision(&zombie[i], 1.0f, map.paredes, map.mParedes);
+    }
 
     // Dibujado
     BeginDrawing();
     ClearBackground(green);
 
-    // Interacción
+
     Rectangle sourceRec = {0.0f, 0.0f, (float)player.width, (float)player.height};
-    Rectangle bloque = {0.0f, 0.0f, (float)zombie->zom.width, (float)zombie->zom.height};
 
     float nuevoAncho = 50.0f;
     float nuevoAlto = 80.0f;
     Rectangle destRec = {pos->x, pos->y, nuevoAncho, nuevoAlto};
-    Rectangle destinoRec = {zombie->pos.x, zombie->pos.y, nuevoAncho, nuevoAlto};
 
     Rectangle sourceBackground = {0.0f, 0.0f, (float)map.fondo.width, (float)map.fondo.height};
-
-    Rectangle destBackground = {0.0f, 0.0f, (float)GetScreenWidth(), (float)GetScreenHeight()};
-
+    Rectangle destBackground = {0.0f, 0.0f, w, h};
     Vector2 origen = {0.0f, 0.0f};
 
-    if (CheckCollisionRecs(destRec, destinoRec))
-    {
-        band->nivel = 0;
-    }
-    else
-    {
-        // Si toca la salida de arriba (índice 0), entra al refugio (Nivel 2)
-        if (CheckCollisionRecs(destRec, map.salidas[0]))
-        {
-            band->nivel = 7;
-            pos->x = w * 0.50f; // Centrado horizontalmente
-            pos->y = h * 0.80f; // Aparece en la parte de abajo del refugio
-        }
-    }
-
+    // 1. PRIMERO se dibujan el fondo y el jugador
     DrawTexturePro(map.fondo, sourceBackground, destBackground, origen, 0.0f, WHITE);
     DrawTexturePro(player, sourceRec, destRec, origen, 0.0f, WHITE);
-    DrawTexturePro(zombie->zom, bloque, destinoRec, origen, 0.0f, WHITE);
+
+    // 2. Se dibujan los zombis encima del fondo
+    for (int j = 0; j < 12; j++)
+    {
+        Rectangle bloque = {0.0f, 0.0f, (float)zombie[j].zom.width, (float)zombie[j].zom.height};
+        Rectangle destinoRec = {zombie[j].pos.x, zombie[j].pos.y, nuevoAncho, nuevoAlto};
+
+        if (CheckCollisionRecs(destRec, destinoRec))
+        {
+            band->nivel = 0;
+            init_zombies(zombie, 12, map); // Reubica los zombis
+        }
+
+        DrawTexturePro(zombie[j].zom, bloque, destinoRec, origen, 0.0f, WHITE);
+    }
+
+    // Si toca la salida de arriba (índice 0), entra al refugio
+    if (CheckCollisionRecs(destRec, map.salidas[0]))
+    {
+        band->nivel = 7;
+        pos->x = w * 0.50f; // Centrado horizontalmente
+        pos->y = h * 0.80f; // Aparece en la parte de abajo del refugio
+    }
+
     // --- MODO DEPURACIÓN: Borra este bloque cuando ya estén calibradas ---
     for (int i = 0; i < 4; i++)
     {
