@@ -48,18 +48,45 @@ typedef struct _enemy
     int vida;
     int ataque;
     int tipo;
+    Vector2 pos;
+    Vector2 dir;
     Texture2D zom;
 } sTenemy;
 
+typedef struct _mapa
+{
+    Texture2D fondo;
+    Rectangle paredes[4];
+    int mParedes = 4;
+    Rectangle salidas[4];
+    int mSalidas = 4;
+    int destSalida[4];
+} sTmapa;
+
 // Prototipos
+bool chocaConParedes(Rectangle hitbox, Rectangle paredes[], int totalParedes);
 void mov_player(float *pX, float *pY);
 void mov_jugador(Vector2 *pos);
+void mov_flechita(Vector2 *pos, sTband *band);
+void mov_jugador_colision(Vector2 *pos, Rectangle paredes[], int totalParedes);
 
 void batalla();
 
 // No hay main.
 
 // Desarrollo
+bool chocaConParedes(Rectangle hitbox, Rectangle paredes[], int totalParedes)
+{
+    for (int i = 0; i < totalParedes; i++)
+    {
+        if (CheckCollisionRecs(hitbox, paredes[i]))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+//*********************************************************
 void mov_player(float *pX, float *pY)
 {
     if (IsKeyDown(KEY_RIGHT))
@@ -122,3 +149,187 @@ void mov_jugador(Vector2 *pos)
     }
 }
 //*********************************************************
+void mov_jugador_colision(Vector2 *pos, Rectangle paredes[], int totalParedes)
+{
+    float velocidad = 3.0f;
+    float ancho = 50.0f;
+    float alto = 80.0f;
+    float w = (float)GetScreenWidth();
+    float h = (float)GetScreenHeight();
+
+    // 1. Movimiento horizontal (Eje X)
+    float prevX = pos->x;
+    if (IsKeyDown(KEY_RIGHT))
+        pos->x += velocidad;
+    if (IsKeyDown(KEY_LEFT))
+        pos->x -= velocidad;
+
+    // Hitbox en los pies del personaje (mitad inferior del sprite)
+    Rectangle hitboxX = {pos->x + 10.0f, pos->y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
+
+    if (pos->x < 0 || pos->x > w - ancho || chocaConParedes(hitboxX, paredes, totalParedes))
+    {
+        pos->x = prevX; // Cancela el movimiento en X si choca
+    }
+
+    // 2. Movimiento vertical (Eje Y)
+    float prevY = pos->y;
+    if (IsKeyDown(KEY_UP))
+        pos->y -= velocidad;
+    if (IsKeyDown(KEY_DOWN))
+        pos->y += velocidad;
+
+    Rectangle hitboxY = {pos->x + 10.0f, pos->y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
+
+    if (pos->y < 0 || pos->y > h - alto || chocaConParedes(hitboxY, paredes, totalParedes))
+    {
+        pos->y = prevY; // Cancela el movimiento en Y si choca
+    }
+}
+//*********************************************************
+void mov_zombie_colision(sTenemy *zombie, float velocidad, Rectangle paredes[], int totalParedes)
+{
+    static float temporizador = 0.0f;
+    temporizador += GetFrameTime();
+
+    float ancho = 50.0f;
+    float alto = 80.0f;
+    float w = (float)GetScreenWidth();
+    float h = (float)GetScreenHeight();
+
+    if (temporizador >= 1.5f)
+    {
+        zombie->dir.x = (float)GetRandomValue(-1, 1);
+        zombie->dir.y = (float)GetRandomValue(-1, 1);
+        temporizador = 0.0f;
+    }
+
+    // Mover en X y rebotar si toca pared o borde
+    float prevX = zombie->pos.x;
+    zombie->pos.x += zombie->dir.x * velocidad;
+    Rectangle hitboxX = {zombie->pos.x + 10.0f, zombie->pos.y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
+
+    if (zombie->pos.x < 0 || zombie->pos.x > w - ancho || chocaConParedes(hitboxX, paredes, totalParedes))
+    {
+        zombie->pos.x = prevX;
+        zombie->dir.x *= -1.0f;
+    }
+
+    // Mover en Y y rebotar si toca pared o borde
+    float prevY = zombie->pos.y;
+    zombie->pos.y += zombie->dir.y * velocidad;
+    Rectangle hitboxY = {zombie->pos.x + 10.0f, zombie->pos.y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
+
+    if (zombie->pos.y < 0 || zombie->pos.y > h - alto || chocaConParedes(hitboxY, paredes, totalParedes))
+    {
+        zombie->pos.y = prevY;
+        zombie->dir.y *= -1.0f;
+    }
+}
+//*********************************************************
+void mov_flechita(Vector2 *pos, sTband *band)
+{
+    float anchoPantalla = (float)GetScreenWidth();
+    float altoPantalla = (float)GetScreenHeight();
+
+    if (IsKeyPressed(KEY_UP))
+    {
+        (band->menu)--;
+        if (band->menu < 1)
+        {
+            (band->menu) = 3;
+        }
+        else
+        {
+            if (band->menu > 3)
+            {
+                (band->menu) = 1;
+            }
+        }
+    }
+    else
+    {
+        if (IsKeyPressed(KEY_DOWN))
+        {
+            (band->menu)++;
+            if (band->menu > 3)
+            {
+                (band->menu) = 1;
+            }
+            else
+            {
+                if (band->menu < 1)
+                {
+                    (band->menu) = 3;
+                }
+            }
+        }
+    }
+
+    if (band->menu == 1)
+    {
+        pos->x = anchoPantalla * 0.74f;
+        pos->y = altoPantalla * 0.676f;
+    }
+    else
+    {
+        if (band->menu == 2)
+        {
+            pos->x = anchoPantalla * 0.82f;
+            pos->y = altoPantalla * 0.775f;
+        }
+        else
+        {
+            pos->x = anchoPantalla * 0.78f;
+            pos->y = altoPantalla * 0.870f;
+        }
+    }
+
+    if (IsKeyPressed(KEY_ENTER))
+    {
+        if (band->menu == 1)
+        {
+            band->nivel = 1;
+            pos->x = GetScreenWidth() / 2.0f;
+            pos->y = GetScreenHeight() / 2.0f;
+        }
+        else
+        {
+            if (band->menu == 2)
+            {
+                band->main = 6;
+            }
+            else
+            {
+                band->main = 3;
+            }
+        }
+    }
+}
+//*********************************************************
+void mov_zombie(sTenemy *zombie, float velocidad)
+{
+    static float temporizador = 0.0f;
+    temporizador += GetFrameTime(); // Suma el tiempo transcurrido en segundos
+
+    // Cada 1.5 segundos elige una nueva dirección (-1, 0 o 1)
+    if (temporizador >= 1.5f)
+    {
+        zombie->dir.x = (float)GetRandomValue(-1, 1);
+        zombie->dir.y = (float)GetRandomValue(-1, 1);
+        temporizador = 0.0f;
+    }
+
+    zombie->pos.x += zombie->dir.x * velocidad;
+    zombie->pos.y += zombie->dir.y * velocidad;
+
+    // Evita que se salga de la pantalla
+    if (zombie->pos.x < 0)
+        zombie->pos.x = 0;
+    if (zombie->pos.y < 0)
+        zombie->pos.y = 0;
+    if (zombie->pos.x > GetScreenWidth() - 50.0f)
+        zombie->pos.x = GetScreenWidth() - 50.0f;
+    if (zombie->pos.y > GetScreenHeight() - 80.0f)
+        zombie->pos.y = GetScreenHeight() - 80.0f;
+}
