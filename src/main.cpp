@@ -88,17 +88,17 @@ int main()
         zombie[i].pos.y = (GetScreenHeight() / 2.0f) - 250.0f;
 
         // animacion inicio //
-        zombie[i].total_frames = 4;
+        zombie[i].anim.total_frames = 4;
         //inicia las animaciones en un frame aleatorio para que no se repitan
-        zombie[i].frame_actual = GetRandomValue(0, 3);
-        zombie[i].timer = 0.0f;
-        zombie[i].velAnim = 0.15f;
+        zombie[i].anim.frame_actual = GetRandomValue(0, 3);
+        zombie[i].anim.timer = 0.0f;
+        zombie[i].anim.velAnim = 0.15f;
 
 
         // recortes del spritesheet //
         float anchoFrame = (float)zombie[i].zom.width / 4;
-        zombie[i].frameRec = (Rectangle){
-            zombie[i].frame_actual * anchoFrame,
+        zombie[i].anim.frameRec = (Rectangle){
+            zombie[i].anim.frame_actual * anchoFrame,
             0.0f, anchoFrame, (float)zombie[i].zom.height};
     }
     init_zombies(zombie, 12, map);
@@ -272,7 +272,7 @@ void nivel1(sTband *band, Vector2 *pos, Color green, Texture2D player, sTmapa ma
     for (int j = 0; j < 12; j++)
     {
         //se llama la funcion para empezar el ciclo de los frames
-        animacion(&zombie[j]);
+        animacion(&zombie[j].anim);
         Rectangle destinoRec = {zombie[j].pos.x, zombie[j].pos.y, nuevoAncho, nuevoAlto};
         if (CheckCollisionRecs(destRec, destinoRec))
         {
@@ -280,7 +280,7 @@ void nivel1(sTband *band, Vector2 *pos, Color green, Texture2D player, sTmapa ma
             init_zombies(zombie, 12, map); // Reubica los zombis
         }
         //toma el frame recortado
-        DrawTexturePro(zombie[j].zom, zombie[j].frameRec, destinoRec, origen, 0.0f, WHITE);
+        DrawTexturePro(zombie[j].zom, zombie[j].anim.frameRec, destinoRec, origen, 0.0f, WHITE);
     }
 
     // Si toca la salida de arriba (índice 0), entra al refugio

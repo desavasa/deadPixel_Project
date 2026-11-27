@@ -32,7 +32,16 @@ typedef struct _banderas
     int batalla;
     int menu;
 } sTband;
-
+typedef struct _frames
+{
+    int frame_actual;
+    int total_frames;
+    float velAnim;
+    Rectangle frameRec;
+    float timer;
+} sTframes;
+//init zombies y zombies colision modificados 26 nov 
+//para agregar struct frames
 typedef struct _player
 {
     int vida;
@@ -48,14 +57,11 @@ typedef struct _enemy
     int vida;
     int ataque;
     int tipo;
-    float timer;
     Vector2 pos;
     Vector2 dir;
     Texture2D zom;
-    int frame_actual;
-    int total_frames;
-    float velAnim;
-    Rectangle frameRec;
+    sTframes anim;
+    
 } sTenemy;
 
 typedef struct _mapa
@@ -199,14 +205,14 @@ void mov_jugador_colision(Vector2 *pos, Rectangle paredes[], int totalParedes)
 //*********************************************************
 void mov_zombie_colision(sTenemy *zombie, float velocidad, Rectangle paredes[], int totalParedes)
 {
-    zombie->timer += GetFrameTime();
+    zombie->anim.timer += GetFrameTime();
 
     float ancho = 50.0f;
     float alto = 80.0f;
     float w = (float)GetScreenWidth();
     float h = (float)GetScreenHeight();
 
-    if (zombie->timer >= 1.5f)
+    if (zombie->anim.timer >= 1.5f)
     {
         zombie->dir.x = (float)GetRandomValue(-1, 1);
         zombie->dir.y = (float)GetRandomValue(-1, 1);
@@ -216,7 +222,7 @@ void mov_zombie_colision(sTenemy *zombie, float velocidad, Rectangle paredes[], 
         {
             zombie->dir.x = 1.0f;
         }
-        zombie->timer = 0.0f;
+        zombie->anim.timer = 0.0f;
     }
 
     // Mover en X y rebotar si toca pared o borde
@@ -361,7 +367,7 @@ void init_zombies(sTenemy zombie[], int total, sTmapa map)
 
     for (int i = 0; i < total; i++)
     {
-        zombie[i].timer = (float)GetRandomValue(0, 15) / 10.0f; // Desfase inicial para que no giren todos al mismo tiempo
+        zombie[i].anim.timer = (float)GetRandomValue(0, 15) / 10.0f; // Desfase inicial para que no giren todos al mismo tiempo
         zombie[i].dir.x = (float)GetRandomValue(-1, 1);
         zombie[i].dir.y = (float)GetRandomValue(-1, 1);
 
@@ -409,7 +415,7 @@ void init_zombies(sTenemy zombie[], int total, sTmapa map)
 }
 
 
-void animacion(sTenemy *z)
+void animacion(sTframes *z)
 {
     z->timer += GetFrameTime();
 
