@@ -2,7 +2,6 @@
 // Juego
 // Fecha de inicio
 // retos semanales - Semana 2
-//26 nov ver
 #include "gamelib.h"
 
 // Prototipos
@@ -14,6 +13,7 @@ void nivel2();
 void nivel3();
 void nivel4();
 void nivel5();
+
 int main()
 {
     // Pantalla completa
@@ -55,13 +55,11 @@ int main()
     map.salidas[3] = (Rectangle){w * 0.98f, h * 0.42f, w * 0.02f, h * 0.18f};
 
     // Imagenes cargadas como Texturas 2D
-    jugador.player = LoadTexture("sprites/Spritee.png");
+    jugador.player = LoadTexture("sprites/player.PNG");
     map.fondo = LoadTexture("sprites/Fondou.png");
     Texture2D fondoRefugio = LoadTexture("sprites/Img.png");
     Texture2D flecha = LoadTexture("sprites/flecha.png");
     Texture2D back_menu = LoadTexture("sprites/back_menu.png");
-
-    // carga la hoja de sprites para cada zombi //
 
     for (i = 0; i < 12; i++)
     {
@@ -69,34 +67,40 @@ int main()
         {
             zombie[i].zom = LoadTexture("sprites/zom1_sheet.png");
         }
-        else if (i < 6)
-        {
-            zombie[i].zom = LoadTexture("sprites/zom2_sheet.png");
-        }
-
-        else if (i < 9)
-        {
-            zombie[i].zom = LoadTexture("sprites/zom3_sheet.png");
-        }
         else
         {
-            zombie[i].zom = LoadTexture("sprites/zom4_sheet.png");
-        }
+            if (i < 6)
+            {
+                zombie[i].zom = LoadTexture("sprites/zom2_sheet.png");
+            }
 
+            else
+            {
+                if (i < 9)
+                {
+                    zombie[i].zom = LoadTexture("sprites/zom3_sheet.png");
+                }
+                else
+                {
+                    zombie[i].zom = LoadTexture("sprites/zom4_sheet.png");
+                }
+            }
+        }
 
         zombie[i].pos.x = GetScreenWidth() / 2.0f;
         zombie[i].pos.y = (GetScreenHeight() / 2.0f) - 250.0f;
 
         // animacion inicio //
         zombie[i].anim.total_frames = 4;
-        //inicia las animaciones en un frame aleatorio para que no se repitan
+        // inicia las animaciones en un frame aleatorio para que no se repitan
+        zombie[i].timer = 0.0f;
         zombie[i].anim.frame_actual = GetRandomValue(0, 3);
         zombie[i].anim.timer = 0.0f;
         zombie[i].anim.velAnim = 0.15f;
 
-
         // recortes del spritesheet //
         float anchoFrame = (float)zombie[i].zom.width / 4;
+
         zombie[i].anim.frameRec = (Rectangle){
             zombie[i].anim.frame_actual * anchoFrame,
             0.0f, anchoFrame, (float)zombie[i].zom.height};
@@ -263,7 +267,6 @@ void nivel1(sTband *band, Vector2 *pos, Color green, Texture2D player, sTmapa ma
     Rectangle destBackground = {0.0f, 0.0f, w, h};
     Vector2 origen = {0.0f, 0.0f};
 
-    
     // 1. PRIMERO se dibujan el fondo y el jugador
     DrawTexturePro(map.fondo, sourceBackground, destBackground, origen, 0.0f, WHITE);
     DrawTexturePro(player, sourceRec, destRec, origen, 0.0f, WHITE);
@@ -273,7 +276,9 @@ void nivel1(sTband *band, Vector2 *pos, Color green, Texture2D player, sTmapa ma
     {
         //se llama la funcion para empezar el ciclo de los frames
         animacion(&zombie[j].anim);
+        
         Rectangle destinoRec = {zombie[j].pos.x, zombie[j].pos.y, nuevoAncho, nuevoAlto};
+
         if (CheckCollisionRecs(destRec, destinoRec))
         {
             band->nivel = 0;

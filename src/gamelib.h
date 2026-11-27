@@ -5,7 +5,8 @@
 // ACTUALIZACIONES:
 // 07-11-2026 -> Se creó la librería y se probaron funciones útiles.
 // 20-11-2026 -> Se borraron las funciones y se optó por agregar sólo reutilizables.
-//
+// 25-11-2026 -> Se agregaron estructuras, funciones de colisión y movimiento.
+
 #include <raylib.h>
 #include <stdio.h>
 
@@ -13,8 +14,10 @@
 enum armas
 {
     cuchillo,
-    pistola,
-    escopeta,
+    magnum,
+    escopeta1,
+    escopeta2,
+    tmp,
     rifle
 };
 
@@ -32,6 +35,7 @@ typedef struct _banderas
     int batalla;
     int menu;
 } sTband;
+
 typedef struct _frames
 {
     int frame_actual;
@@ -40,8 +44,7 @@ typedef struct _frames
     Rectangle frameRec;
     float timer;
 } sTframes;
-//init zombies y zombies colision modificados 26 nov 
-//para agregar struct frames
+
 typedef struct _player
 {
     int vida;
@@ -57,11 +60,11 @@ typedef struct _enemy
     int vida;
     int ataque;
     int tipo;
+    float timer;
     Vector2 pos;
     Vector2 dir;
     Texture2D zom;
     sTframes anim;
-    
 } sTenemy;
 
 typedef struct _mapa
@@ -74,21 +77,56 @@ typedef struct _mapa
     int destSalida[4];
 } sTmapa;
 
-// Prototipos
-bool chocaConParedes(Rectangle hitbox, Rectangle paredes[], int totalParedes);
-void mov_player(float *pX, float *pY);
+// PROTOTIPOS
+
+// Jugador
 void mov_jugador(Vector2 *pos);
-void mov_flechita(Vector2 *pos, sTband *band);
+bool chocaConParedes(Rectangle hitbox, Rectangle paredes[], int totalParedes);
 void mov_jugador_colision(Vector2 *pos, Rectangle paredes[], int totalParedes);
+// Menú
+void mov_flechita(Vector2 *pos, sTband *band);
+void batalla();
+// Zombies
 void init_zombies(sTenemy zombie[], int total, sTmapa map);
 void mov_zombie_colision(sTenemy *zombie, float velocidad, Rectangle paredes[], int totalParedes);
+// Animaciones generales
 void animacion(sTenemy *z);
-
-void batalla();
 
 // No hay main.
 
-// Desarrollo
+// DESARROLLO DE FUNCIONES
+//*********************************************************
+// Funciones para jugador principal
+//*********************************************************
+void mov_jugador(Vector2 *pos)
+{
+    if (IsKeyDown(KEY_RIGHT))
+    {
+        pos->x += 3.0f;
+    }
+    else
+    {
+        if (IsKeyDown(KEY_LEFT))
+        {
+            pos->x -= 3.0f;
+        }
+        else
+        {
+            if (IsKeyDown(KEY_UP))
+            {
+                pos->y -= 3.0f;
+            }
+            else
+            {
+                if (IsKeyDown(KEY_DOWN))
+                {
+                    pos->y += 3.0f;
+                }
+            }
+        }
+    }
+}
+//*********************************************************
 bool chocaConParedes(Rectangle hitbox, Rectangle paredes[], int totalParedes)
 {
     for (int i = 0; i < totalParedes; i++)
@@ -101,159 +139,72 @@ bool chocaConParedes(Rectangle hitbox, Rectangle paredes[], int totalParedes)
     return false;
 }
 //*********************************************************
-void mov_player(float *pX, float *pY)
-{
-    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
-    {
-        *pX += 3.0f;
-    }
-    else
-    {
-        if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
-        {
-            *pX -= 3.0f;
-        }
-        else
-        {
-            if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
-            {
-                *pY -= 3.0f;
-            }
-            else
-            {
-                if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
-                {
-                    *pY += 3.0f;
-                }
-            }
-        }
-    }
-}
-//*********************************************************
-void batalla()
-{
-    //while(sTenemy.vida>0){}
-    
-}
-//*********************************************************
-void mov_jugador(Vector2 *pos)
-{
-    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
-    {
-        pos->x += 3.0f;
-    }
-    else
-    {
-        if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
-        {
-            pos->x -= 3.0f;
-        }
-        else
-        {
-            if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
-            {
-                pos->y -= 3.0f;
-            }
-            else
-            {
-                if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
-                {
-                    pos->y += 3.0f;
-                }
-            }
-        }
-    }
-}
-//*********************************************************
 void mov_jugador_colision(Vector2 *pos, Rectangle paredes[], int totalParedes)
 {
-    float velocidad = 3.0f;
     float ancho = 50.0f;
     float alto = 80.0f;
     float w = (float)GetScreenWidth();
     float h = (float)GetScreenHeight();
-
-    // 1. Movimiento horizontal (Eje X)
     float prevX = pos->x;
-    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
-        pos->x += velocidad;
-    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
-        pos->x -= velocidad;
-
-    // Hitbox en los pies del personaje (mitad inferior del sprite)
-    Rectangle hitboxX = {pos->x + 10.0f, pos->y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
-
-    if (pos->x < 0 || pos->x > w - ancho || chocaConParedes(hitboxX, paredes, totalParedes))
-    {
-        pos->x = prevX; // Cancela el movimiento en X si choca
-    }
-
-    // 2. Movimiento vertical (Eje Y)
     float prevY = pos->y;
-    if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
-        pos->y -= velocidad;
-    if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
-        pos->y += velocidad;
 
+    mov_jugador(pos);
+
+    // Se acomoda la hitbox del personaje para que esté en sus piernas.
+    Rectangle hitboxX = {pos->x + 10.0f, pos->y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
+    // Se acomoda la hitbox en la cabeza del jugador.
     Rectangle hitboxY = {pos->x + 10.0f, pos->y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
 
-    if (pos->y < 0 || pos->y > h - alto || chocaConParedes(hitboxY, paredes, totalParedes))
+    // 1. Movimiento en Eje X
+    if (chocaConParedes(hitboxX, paredes, totalParedes))
     {
-        pos->y = prevY; // Cancela el movimiento en Y si choca
+        pos->x = prevX; // Cancela el movimiento en X si choca, regresando a su estado previo.
     }
-}
-//*********************************************************
-void mov_zombie_colision(sTenemy *zombie, float velocidad, Rectangle paredes[], int totalParedes)
-{
-    zombie->anim.timer += GetFrameTime();
-
-    float ancho = 50.0f;
-    float alto = 80.0f;
-    float w = (float)GetScreenWidth();
-    float h = (float)GetScreenHeight();
-
-    if (zombie->anim.timer >= 1.5f)
+    else
     {
-        zombie->dir.x = (float)GetRandomValue(-1, 1);
-        zombie->dir.y = (float)GetRandomValue(-1, 1);
-        
-        // Evita que se quede completamente detenido
-        if (zombie->dir.x == 0.0f && zombie->dir.y == 0.0f)
+        if (pos->x > w - ancho)
         {
-            zombie->dir.x = 1.0f;
+            pos->x = prevX;
         }
-        zombie->anim.timer = 0.0f;
+        else
+        {
+            if (pos->x < 0)
+            {
+                pos->x = prevX;
+            }
+        }
     }
 
-    // Mover en X y rebotar si toca pared o borde
-    float prevX = zombie->pos.x;
-    zombie->pos.x += zombie->dir.x * velocidad;
-    Rectangle hitboxX = {zombie->pos.x + 10.0f, zombie->pos.y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
-
-    if (zombie->pos.x < 0 || zombie->pos.x > w - ancho || chocaConParedes(hitboxX, paredes, totalParedes))
+    // 2. Movimiento en Eje Y
+    if (chocaConParedes(hitboxY, paredes, totalParedes))
     {
-        zombie->pos.x = prevX;
-        zombie->dir.x *= -1.0f;
+        pos->y = prevY; // Cancela el movimiento en Y si choca, regresando a su estado previo.
     }
-
-    // Mover en Y y rebotar si toca pared o borde
-    float prevY = zombie->pos.y;
-    zombie->pos.y += zombie->dir.y * velocidad;
-    Rectangle hitboxY = {zombie->pos.x + 10.0f, zombie->pos.y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
-
-    if (zombie->pos.y < 0 || zombie->pos.y > h - alto || chocaConParedes(hitboxY, paredes, totalParedes))
+    else
     {
-        zombie->pos.y = prevY;
-        zombie->dir.y *= -1.0f;
+        if (pos->y > h - alto)
+        {
+            pos->y = prevY;
+        }
+        else
+        {
+            if (pos->y < 0)
+            {
+                pos->y = prevY;
+            }
+        }
     }
 }
+
+//*********************************************************
+// Funciones de menú
 //*********************************************************
 void mov_flechita(Vector2 *pos, sTband *band)
 {
     float anchoPantalla = (float)GetScreenWidth();
     float altoPantalla = (float)GetScreenHeight();
 
-    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))
+    if (IsKeyPressed(KEY_UP))
     {
         (band->menu)--;
         if (band->menu < 1)
@@ -270,7 +221,7 @@ void mov_flechita(Vector2 *pos, sTband *band)
     }
     else
     {
-        if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S))
+        if (IsKeyPressed(KEY_DOWN))
         {
             (band->menu)++;
             if (band->menu > 3)
@@ -328,32 +279,12 @@ void mov_flechita(Vector2 *pos, sTband *band)
     }
 }
 //*********************************************************
-void mov_zombie(sTenemy *zombie, float velocidad)
+void batalla()
 {
-    static float temporizador = 0.0f;
-    temporizador += GetFrameTime(); // Suma el tiempo transcurrido en segundos
-
-    // Cada 1.5 segundos elige una nueva dirección (-1, 0 o 1)
-    if (temporizador >= 1.5f)
-    {
-        zombie->dir.x = (float)GetRandomValue(-1, 1);
-        zombie->dir.y = (float)GetRandomValue(-1, 1);
-        temporizador = 0.0f;
-    }
-
-    zombie->pos.x += zombie->dir.x * velocidad;
-    zombie->pos.y += zombie->dir.y * velocidad;
-
-    // Evita que se salga de la pantalla
-    if (zombie->pos.x < 0)
-        zombie->pos.x = 0;
-    if (zombie->pos.y < 0)
-        zombie->pos.y = 0;
-    if (zombie->pos.x > GetScreenWidth() - 50.0f)
-        zombie->pos.x = GetScreenWidth() - 50.0f;
-    if (zombie->pos.y > GetScreenHeight() - 80.0f)
-        zombie->pos.y = GetScreenHeight() - 80.0f;
 }
+
+//*********************************************************
+// Funciones para zombies
 //*********************************************************
 void init_zombies(sTenemy zombie[], int total, sTmapa map)
 {
@@ -367,7 +298,7 @@ void init_zombies(sTenemy zombie[], int total, sTmapa map)
 
     for (int i = 0; i < total; i++)
     {
-        zombie[i].anim.timer = (float)GetRandomValue(0, 15) / 10.0f; // Desfase inicial para que no giren todos al mismo tiempo
+        zombie[i].timer = (float)GetRandomValue(0, 15) / 10.0f; // Desfase inicial para que no giren todos al mismo tiempo
         zombie[i].dir.x = (float)GetRandomValue(-1, 1);
         zombie[i].dir.y = (float)GetRandomValue(-1, 1);
 
@@ -413,8 +344,87 @@ void init_zombies(sTenemy zombie[], int total, sTmapa map)
         }
     }
 }
+//*********************************************************
+void mov_zombie_colision(sTenemy *zombie, float velocidad, Rectangle paredes[], int totalParedes)
+{
+    zombie->timer += GetFrameTime();
 
+    float ancho = 50.0f;
+    float alto = 80.0f;
+    float w = (float)GetScreenWidth();
+    float h = (float)GetScreenHeight();
 
+    // Mover en X y rebotar si toca pared o borde
+    float prevX = zombie->pos.x;
+    zombie->pos.x += zombie->dir.x * velocidad;
+    Rectangle hitboxX = {zombie->pos.x + 10.0f, zombie->pos.y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
+
+    // Mover en Y y rebotar si toca pared o borde
+    float prevY = zombie->pos.y;
+    zombie->pos.y += zombie->dir.y * velocidad;
+    Rectangle hitboxY = {zombie->pos.x + 10.0f, zombie->pos.y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
+
+    // Tiempo del zombie
+    if (zombie->timer >= 1.5f)
+    {
+        zombie->dir.x = (float)GetRandomValue(-1, 1);
+        zombie->dir.y = (float)GetRandomValue(-1, 1);
+
+        // Evita que se quede completamente detenido
+        if (zombie->dir.x == 0.0f && zombie->dir.y == 0.0f)
+        {
+            zombie->dir.x = 1.0f;
+        }
+        zombie->timer = 0.0f;
+    }
+
+    // Choque en X
+    if (chocaConParedes(hitboxX, paredes, totalParedes))
+    {
+        zombie->pos.x = prevX;
+        zombie->dir.x *= -1.0f;
+    }
+    else
+    {
+        if (zombie->pos.x > w - ancho)
+        {
+            zombie->pos.x = prevX;
+            zombie->dir.x *= -1.0f;
+        }
+        else
+        {
+            if (zombie->pos.x < 0)
+            {
+                zombie->pos.x = prevX;
+                zombie->dir.x *= -1.0f;
+            }
+        }
+    }
+
+    // Choque en Y
+    if (chocaConParedes(hitboxY, paredes, totalParedes))
+    {
+        zombie->pos.y = prevY;
+        zombie->dir.y *= -1.0f;
+    }
+    else
+    {
+        if (zombie->pos.y > h - alto)
+        {
+            zombie->pos.y = prevY;
+            zombie->dir.y *= -1.0f;
+        }
+        else
+        {
+            if (zombie->pos.y < 0)
+            {
+                zombie->pos.y = prevY;
+                zombie->dir.y *= -1.0f;
+            }
+        }
+    }
+}
+//*********************************************************
 void animacion(sTframes *z)
 {
     z->timer += GetFrameTime();
@@ -426,11 +436,11 @@ void animacion(sTframes *z)
 
         if (z->frame_actual >= z->total_frames)
         {
-            //hace el bucle de la animacion
+            // Hace el bucle de la animación.
             z->frame_actual = 0;
         }
 
-        // Actualiza la posición X del rectángulo de recorte
+        // Actualiza la posición X del rectángulo de recorte.
         z->frameRec.x = (float)z->frame_actual * z->frameRec.width;
     }
 
