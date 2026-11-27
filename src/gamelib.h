@@ -52,6 +52,10 @@ typedef struct _enemy
     Vector2 pos;
     Vector2 dir;
     Texture2D zom;
+    int frame_actual;
+    int total_frames;
+    float velAnim;
+    Rectangle frameRec;
 } sTenemy;
 
 typedef struct _mapa
@@ -72,6 +76,7 @@ void mov_flechita(Vector2 *pos, sTband *band);
 void mov_jugador_colision(Vector2 *pos, Rectangle paredes[], int totalParedes);
 void init_zombies(sTenemy zombie[], int total, sTmapa map);
 void mov_zombie_colision(sTenemy *zombie, float velocidad, Rectangle paredes[], int totalParedes);
+void animacion(sTenemy *z);
 
 void batalla();
 
@@ -92,25 +97,25 @@ bool chocaConParedes(Rectangle hitbox, Rectangle paredes[], int totalParedes)
 //*********************************************************
 void mov_player(float *pX, float *pY)
 {
-    if (IsKeyDown(KEY_RIGHT))
+    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
     {
         *pX += 3.0f;
     }
     else
     {
-        if (IsKeyDown(KEY_LEFT))
+        if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
         {
             *pX -= 3.0f;
         }
         else
         {
-            if (IsKeyDown(KEY_UP))
+            if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
             {
                 *pY -= 3.0f;
             }
             else
             {
-                if (IsKeyDown(KEY_DOWN))
+                if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
                 {
                     *pY += 3.0f;
                 }
@@ -121,29 +126,31 @@ void mov_player(float *pX, float *pY)
 //*********************************************************
 void batalla()
 {
+    //while(sTenemy.vida>0){}
+    
 }
 //*********************************************************
 void mov_jugador(Vector2 *pos)
 {
-    if (IsKeyDown(KEY_RIGHT))
+    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
     {
         pos->x += 3.0f;
     }
     else
     {
-        if (IsKeyDown(KEY_LEFT))
+        if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
         {
             pos->x -= 3.0f;
         }
         else
         {
-            if (IsKeyDown(KEY_UP))
+            if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
             {
                 pos->y -= 3.0f;
             }
             else
             {
-                if (IsKeyDown(KEY_DOWN))
+                if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
                 {
                     pos->y += 3.0f;
                 }
@@ -162,9 +169,9 @@ void mov_jugador_colision(Vector2 *pos, Rectangle paredes[], int totalParedes)
 
     // 1. Movimiento horizontal (Eje X)
     float prevX = pos->x;
-    if (IsKeyDown(KEY_RIGHT))
+    if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D))
         pos->x += velocidad;
-    if (IsKeyDown(KEY_LEFT))
+    if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A))
         pos->x -= velocidad;
 
     // Hitbox en los pies del personaje (mitad inferior del sprite)
@@ -177,9 +184,9 @@ void mov_jugador_colision(Vector2 *pos, Rectangle paredes[], int totalParedes)
 
     // 2. Movimiento vertical (Eje Y)
     float prevY = pos->y;
-    if (IsKeyDown(KEY_UP))
+    if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W))
         pos->y -= velocidad;
-    if (IsKeyDown(KEY_DOWN))
+    if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S))
         pos->y += velocidad;
 
     Rectangle hitboxY = {pos->x + 10.0f, pos->y + (alto * 0.5f), ancho - 20.0f, alto * 0.5f};
@@ -240,7 +247,7 @@ void mov_flechita(Vector2 *pos, sTband *band)
     float anchoPantalla = (float)GetScreenWidth();
     float altoPantalla = (float)GetScreenHeight();
 
-    if (IsKeyPressed(KEY_UP))
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))
     {
         (band->menu)--;
         if (band->menu < 1)
@@ -257,7 +264,7 @@ void mov_flechita(Vector2 *pos, sTband *band)
     }
     else
     {
-        if (IsKeyPressed(KEY_DOWN))
+        if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S))
         {
             (band->menu)++;
             if (band->menu > 3)
@@ -399,4 +406,26 @@ void init_zombies(sTenemy zombie[], int total, sTmapa map)
             }
         }
     }
+}
+
+
+void animacion(sTenemy *z)
+{
+    z->timer += GetFrameTime();
+
+    if (z->timer >= z->velAnim)
+    {
+        z->timer = 0.0f;
+        z->frame_actual++;
+
+        if (z->frame_actual >= z->total_frames)
+        {
+            //hace el bucle de la animacion
+            z->frame_actual = 0;
+        }
+
+        // Actualiza la posición X del rectángulo de recorte
+        z->frameRec.x = (float)z->frame_actual * z->frameRec.width;
+    }
+
 }
